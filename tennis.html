@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tennis SVG</title>
+    <style>
+        *{
+            padding: 0;
+            margin: 0;
+        }
+        html, body{
+            width: 100%;
+            height: 100%;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+<div><input name="btn" onclick="requestAnimationFrame(draw);" type="button" value="старт!" style="font-size: 20px; padding:0 20px; border: none;">
+<div id='score' style="width: 90px;height: 60px; display:inline-block;margin:0 180px;font-size: 50px;"></div></div>
+
+
+<script>
+
+    function getNode(n, v) {
+        n = document.createElementNS("http://www.w3.org/2000/svg", n);
+        for (let p in v)
+            n.setAttribute( p.replace(/[A-Z]/g, function(m, p, o, s) { return "-" + m.toLowerCase(); }), v[p]);
+        return n
+    }
+
+    let scoreGreenGamer = 0;
+    let scoreBlueGamer = 0;
+    let speedX = 5;
+    let speedY = 7;
+    let posBallX = 300;
+    let posBallY = 200 + Math.floor(Math.random()*10);
+    const lengthRacket = 120;
+    const widthRacket = 10;
+    const radiusBall = 20;
+    const widthField = 600;
+    const heightField = 400;
+    const svg = getNode('svg', {width:600, height:400});
+    const field = getNode('rect', {x:0, y:0, width:widthField, height:heightField, fill: "yellow"});
+    document.body.insertBefore(svg, document.querySelector('script'));
+    svg.appendChild(field);
+    const score = document.getElementById('score');
+    const btn = document.getElementsByName('btn')[0];
+    const ball = getNode('circle', {cx:0, cy:0, r: radiusBall, fill: "red"});
+    let posRacketGreenY = (heightField - lengthRacket)/2;
+    let posRacketBlueY = (heightField - lengthRacket)/2;
+    const racketGreen = getNode('rect', {x:0, y:0, width:widthRacket, height:lengthRacket, fill: "green"});
+    const racketBlue = getNode('rect', {x:0, y:0, width:widthRacket, height:lengthRacket, fill: "blue"});
+    let pressedShift = false;
+    let pressedCtrl = false;
+    let pressedArrowUp = false;
+    let pressedArrowDown = false;
+
+    svg.appendChild(ball);
+    svg.appendChild(racketGreen);
+    svg.appendChild(racketBlue);
+    score.textContent = scoreGreenGamer + ":" + scoreBlueGamer;
+
+
+    function runInto(side) {
+        let pointsBallY = [posBallY, posBallY + radiusBall],
+            pointsRacketY;
+        if(side === 'rightLine'){
+            pointsRacketY = [posRacketBlueY, posRacketBlueY + lengthRacket];
+            if(pointsBallY[0] > pointsRacketY[1] || pointsBallY[1] < pointsRacketY[0]){
+                return false;
+            }
+            else return true;
+        }
+        else{
+            pointsRacketY = [posRacketGreenY,posRacketGreenY + lengthRacket];
+            if(pointsBallY[0] > pointsRacketY[1] || pointsBallY[1] < pointsRacketY[0]){
+                return false;
+            }
+            else return true;
+        }
+    }
+
+    function scoreUpdate(pos) {
+        console.log(pos);
+        if(pos - radiusBall <= 0){
+            scoreGreenGamer+=1;
+        }
+        else {
+            scoreBlueGamer+=1;
+        }
+    }
+
+    function draw() {
+        posBallX += speedX;
+        posBallY += speedY;
+
+        if(posBallX + speedX + radiusBall > widthField - widthRacket){  //движение мяча
+            if(runInto('rightLine')){
+                speedX = -5;
+                speedY += Math.floor(Math.random()*10); //меняем направление
+            }
+        }
+        else if(posBallX + speedX - radiusBall < widthRacket){
+            if(runInto('leftLine')){
+                speedX = 5;
+                speedY += Math.floor(Math.random()*10); //меняем направление
+            }
+        }
+        else if(posBallY + speedY + radiusBall > heightField){
+            speedY = -7;
+        }
+        else if(posBallY + speedY - radiusBall < 0){
+            speedY = 7;
+        }
+
+        ball.setAttribute('transform', 'translate('+ posBallX + ' '+ posBallY + ')');
+
+
+        if(pressedShift && posRacketGreenY > 0){   //движение зеленой ракетки слева
+            posRacketGreenY -=7;
+        }
+        else if(pressedCtrl && posRacketGreenY < heightField - lengthRacket ){
+            posRacketGreenY +=7;
+        }
+
+        racketGreen.setAttribute('transform', 'translate(0 '+ posRacketGreenY + ')');
+
+        if(pressedArrowUp && posRacketBlueY > 0){   //движение синей ракетки справа
+            posRacketBlueY -=7;
+        }
+        else if(pressedArrowDown && posRacketBlueY < heightField - lengthRacket ){
+            posRacketBlueY +=7;
+        }
+
+        racketBlue.setAttribute('transform', 'translate('+ (widthField - widthRacket) + ' ' + posRacketBlueY + ')');
+
+        if(posBallX + speedX + radiusBall > widthField  || posBallX + speedX - radiusBall < 0) {
+            let pos = posBallX + speedX;
+            setTimeout(function () {
+                scoreUpdate(pos);
+                score.textContent = scoreGreenGamer + ":" + scoreBlueGamer; //рисуем счет на доске
+            }, 10);
+            posBallX = 300;
+            posBallY = 200;
+            return false;
+        }
+        else {
+            requestAnimationFrame(draw);
+        }
+    }
+
+
+
+
+    if(pressedShift || pressedArrowUp) {
+        posRacketGreenY -= 7;
+    }
+    else if(pressedCtrl || pressedArrowDown) {
+        posRacketGreenY += 7;
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if(e.keyCode === 16 ){
+            pressedShift = true;
+            console.log('up');
+        }
+        if(e.keyCode === 17 ){
+            pressedCtrl = true;
+            console.log('down');
+        }
+        if(e.keyCode === 38 ){
+            pressedArrowUp = true;
+            console.log('up');
+        }
+        if(e.keyCode === 40 ){
+            pressedArrowDown = true;
+            console.log('up');
+        }
+    });
+    document.addEventListener('keyup', function (e) {
+        if(e.keyCode === 16 ){
+            pressedShift = false;
+            console.log('up');
+        }
+        if(e.keyCode === 17 ){
+            pressedCtrl = false;
+            console.log('down');
+        }
+        if(e.keyCode === 38 ){
+            pressedArrowUp = false;
+            console.log('up');
+        }
+        if(e.keyCode === 40 ){
+            pressedArrowDown = false;
+            console.log('up');
+        }
+    });
+
+
+</script>
+
+
+</body>
+
+</html>
